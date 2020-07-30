@@ -19,10 +19,17 @@
    pip install -r requirements.txt 
    ```
    5. Run Code
+   
       5.1 for KLT
       ```
       python klt.py -i ./Data/set_1 
       ``` 
       Reconstructed images will be saved in result folder.
-      5.2
+      
+      5.2 for DFT and DCT
+      ```
+      python dft_dct.py -i ./Data/set_1
+      ```
+      5.3 For JPEG Compression 
+      
    
