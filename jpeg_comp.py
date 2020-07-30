@@ -8,7 +8,7 @@ import collections
 from dahuffman import HuffmanCodec
 import ast
 
-def largest_N_value_DCT(img_dct, N):
+def largest_N_value_DCT(img_dct, num_of_coefficients):
    
     
    rows_1, cols_1, no_of_blocks = img_dct.shape[0], img_dct.shape[1], img_dct.shape[2]
@@ -22,7 +22,7 @@ def largest_N_value_DCT(img_dct, N):
    while (i < no_of_blocks):
          j =0
    
-         while (j < N):
+         while (j < num_of_coefficients):
               index = np.where(img_dct_abs[:,:,i] == np.amax(img_dct_abs[:,:,i]))
               k = 0 
               while k < len(index[0]) and np.amax(img_dct_abs[:,:,i]) !=0:
@@ -39,35 +39,39 @@ def largest_N_value_DCT(img_dct, N):
 
 def check_and_zero_pad_img(img):
    
-   rows, cols = img.shape[0], img.shape[1]  
+   rows, cols = img.shape[0], img.shape[1] 
+ 
    if rows == cols:
        if rows % 8 != 0:
           # zero padding both rows and cols
           temp = rows % 8
-          zero_pad_img_1 = np.pad(img, (temp), 'constant', constant_values= (0) )
+          zero_pad_img = np.pad(img, (temp), 'constant', constant_values= (0) )
        else:
           # No zero padding
-          zero_pad_img_1 = img
+          zero_pad_img = img
    else:
        if rows % 8 != 0 and cols % 8 ==0: 
          # zero pad row
           temp = rows % 8
-          zero_pad_img_1 = np.pad(img, (temp,0), 'constant', constant_values= (0))
-          zero_pad_img_1 = zero_pad_img_1[temp:,:]
+          zero_pad_img = np.pad(img, (temp,0), 'constant', constant_values= (0))
+          zero_pad_img = zero_pad_img[temp:,:]
        elif rows % 8 == 0 and cols % 8 != 0:
          # zero pad columns
           temp = cols % 8
-          zero_pad_img_1 =  np.pad(img, (0, temp), 'constant', constant_values=(0))
-          zero_pad_img_1 = zero_pad_img_1[0:rows, :]
+          zero_pad_img =  np.pad(img, (0, temp), 'constant', constant_values=(0))
+          zero_pad_img = zero_pad_img[0:rows, :]
        elif rows % 8 !=0 and cols % 8 != 0:
           # zero pad both rows and cols with different padding size
           temp_1 = rows % 8
           temp_2 = cols % 8
-          zero_pad_img_1 = np.pad(img, (temp_1, temp_2), 'constant', constant_values = (0)) 
+          zero_pad_img = np.pad(img, (temp_1, temp_2), 'constant', constant_values = (0)) 
        else:
           # No zero Padding
-          zero_pad_img_1 = img
-   return zero_pad_img_1    
+          zero_pad_img = img
+
+
+   return zero_pad_img    
+
 
 def partitions_in_8X8(zero_pad_image, block_size = 8):
 
@@ -79,6 +83,7 @@ def partitions_in_8X8(zero_pad_image, block_size = 8):
    
    count = 0
    i  = 0
+
    while(i < int(rows/8)):
         j = 0
         while(j < int(cols/8)):
@@ -89,6 +94,7 @@ def partitions_in_8X8(zero_pad_image, block_size = 8):
         i = i + 1
         
    return img_subblock
+
 
 def convert_back_to_original_image(img_subblock, size):
     
@@ -109,6 +115,7 @@ def convert_back_to_original_image(img_subblock, size):
             count = count + 1
          i = i + 1
     return image_reconstructed 
+
    
 def DCT_of_each_subblock(img_subblock):
     
@@ -138,17 +145,9 @@ def IDCT_of_each_subblock(img_subblock_dct_N):
    
    return img_subblock_reconstructed 
 
-def Quantization(img_dct):
-     
-   q_matrix  = np.array( [[16,  11,  10,  16,  24,  40,  51,  61],
-                          [12,  12,  14,  19,  26,  58,  60,  55],
-                          [14,  13,  16,  24,  40,  57,  69,  56],
-                          [14,  17,  22,  29,  51,  87,  80,  62],
-                          [18,  22,  37,  56,  68, 109, 103,  77],
-                          [24,  35,  55,  64,  81, 104, 113,  92],
-                          [49,  64,  78,  87, 103, 121, 120, 101],
-                          [72,  92,  95,  98, 112, 100, 103,  99]])
 
+def Quantization(img_dct, q_matrix):
+     
    rows, cols, no_of_blocks = img_dct.shape[0], img_dct.shape[1], img_dct.shape[2]
    img_dct_q = np.zeros((rows,cols, no_of_blocks))
 
@@ -158,17 +157,10 @@ def Quantization(img_dct):
    
    return img_dct_q
 
-def denorm_Quantization(revert_zig_zag):
+
+def denorm_Quantization(revert_zig_zag, q_matrix):
     
-   q_matrix  = np.array( [[16,  11,  10,  16,  24,  40,  51,  61],
-                          [12,  12,  14,  19,  26,  58,  60,  55],
-                          [14,  13,  16,  24,  40,  57,  69,  56],
-                          [14,  17,  22,  29,  51,  87,  80,  62],
-                          [18,  22,  37,  56,  68, 109, 103,  77],
-                          [24,  35,  55,  64,  81, 104, 113,  92],
-                          [49,  64,  78,  87, 103, 121, 120, 101],
-                          [72,  92,  95,  98, 112, 100, 103,  99]])
-  
+    
       
    rows, cols, no_of_blocks = revert_zig_zag.shape[0], revert_zig_zag.shape[1], revert_zig_zag.shape[2]
    
@@ -250,7 +242,7 @@ def run_length_encoding(img_zig_zag):
    #  import pdb; db.set_trace()
     return RLE_total   
  
-#def huffman_coding(RLE_total):
+
      
 def run_length_decoding(RLE_total):
     
@@ -286,23 +278,29 @@ def huffman_coding_decoding(RLE_total):
      RLE_total_new = str(RLE_total)
      
      codec = HuffmanCodec.from_data(RLE_total_new)
+     print("Huffman Code Table: \n")
+
      codec.print_code_table()
      coded_string  = codec.encode(RLE_total_new)
      decoded_string = codec.decode(coded_string)
      return codec, coded_string, decoded_string
 
- 
-if __name__ == "__main__":
-   
-  
-   ap = argparse.ArgumentParser()
-   ap.add_argument("-i", "--input", required=True, help="path to input image for jpeg compression", type =str)
-   ap.add_argument("-n", "--no_of_coefficient", required=True, help = "number of coefficients between 1 to 64", type =int)
-   ap.add_argument("-m", "--method", required=True, help = "enter zonal_coding or threshold_coding", type = str) 
-   args = vars(ap.parse_args())
-   
+
+def main(args):
+
    PATH = args["input"]
-   N = args["no_of_coefficient"]
+   num_of_coefficients = args["no_of_coefficient"]
+
+   q_matrix  = np.array( [[16,  11,  10,  16,  24,  40,  51,  61],
+                          [12,  12,  14,  19,  26,  58,  60,  55],
+                          [14,  13,  16,  24,  40,  57,  69,  56],
+                          [14,  17,  22,  29,  51,  87,  80,  62],
+                          [18,  22,  37,  56,  68, 109, 103,  77],
+                          [24,  35,  55,  64,  81, 104, 113,  92],
+                          [49,  64,  78,  87, 103, 121, 120, 101],
+                          [72,  92,  95,  98, 112, 100, 103,  99]])
+
+
    
    # Reading the Image
    img  = cv2.imread(PATH, cv2.IMREAD_GRAYSCALE)
@@ -313,13 +311,14 @@ if __name__ == "__main__":
 
    zero_pad_image = check_and_zero_pad_img(img)
 
-   zero_pad_image_1 = zero_pad_image.astype('int32')
+   zero_pad_image = zero_pad_image.astype('int32')
    
-   zero_pad_image_1 = zero_pad_image_1 - 128
+   zero_pad_image = zero_pad_image - 128
+
   
    # partitions into 8 X 8 blocks
     
-   img_subblock = partitions_in_8X8(zero_pad_image_1)
+   img_subblock = partitions_in_8X8(zero_pad_image)
 
      
     # DCT
@@ -329,11 +328,11 @@ if __name__ == "__main__":
    if (args["method"] == 'threshold_coding'):
    # Keep only N coefficients for each subblock
    
-         img_subblock_dct_N = largest_N_value_DCT(img_dct, N)
+         img_subblock_dct_N = largest_N_value_DCT(img_dct, num_of_coefficients)
          denorm_q = img_subblock_dct_N
    else: 
         # Quantization 
-        img_dct_q =  Quantization(img_dct)
+        img_dct_q =  Quantization(img_dct, q_matrix)
 
         # Zig-Zag Scanning
     
@@ -357,7 +356,7 @@ if __name__ == "__main__":
         revert_zig_zag  = revert_zig_zag_scanning(RLE_total_decode)
   
         # Denormalization by Quantization
-        denorm_q =  denorm_Quantization(revert_zig_zag)
+        denorm_q =  denorm_Quantization(revert_zig_zag, q_matrix)
        
    # IDCT
    
@@ -383,8 +382,26 @@ if __name__ == "__main__":
    img_name = os.path.basename(PATH)
    img_name = img_name.replace('.png', '.jpg')
    #save_img = '{}_'.format(N) + img_name
-   save_img = '{}'.format(N) + args["method"]  + img_name
+  
+   results_jpeg = f'results/jpeg'
+
+   if not os.path.isdir(f'{results_jpeg}'):
+        os.makedirs(results_jpeg) 
+     
+   save_img = f'{results_jpeg}/{num_of_coefficients}_{args["method"]}_{img_name}'
+
    cv2.imwrite( save_img, img_reconstructed)
 
 
+
+if __name__ == "__main__":
+   
+   ap = argparse.ArgumentParser()
+   ap.add_argument("-i", "--input", required=True, help="path to input image for jpeg compression", type =str)
+   ap.add_argument("-n", "--no_of_coefficient", required=True, help = "number of coefficients between 1 to 64", type =int)
+   ap.add_argument("-m", "--method", required=True, help = "enter zonal_coding or threshold_coding", type = str) 
+   args = vars(ap.parse_args())
+
+   main(args)   
+   
 
