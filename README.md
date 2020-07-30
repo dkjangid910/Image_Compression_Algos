@@ -24,12 +24,17 @@
       ```
       python klt.py -i ./Data/set_1 
       ``` 
-      Reconstructed images will be saved in result folder.
+      Reconstructed images will be saved in results/klt folder.
       
       5.2 for DFT and DCT
       ```
       python dft_dct.py -i ./Data/set_1
       ```
-      5.3 For JPEG Compression 
+      Reconstructed images will be saved in results/dft and results/dct folder
       
+      5.3 For JPEG Compression 
+      ```
+      python jpeg_comp.py -i Data/set_1/Nikon_D70s_1_23105.png  -n 64 -m zonal_coding
+      ```
+      where n is number of coefficients and m is methods either zonal coding or threshold coding. Results will be saved in results/jpeg folder
    
